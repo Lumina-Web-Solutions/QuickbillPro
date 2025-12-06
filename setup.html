@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quickbill Pro - Company Setup</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+    <h2>Setup Your Business</h2>
+    <p class="subtitle">Enter your company details to create your database.</p>
+    
+    <form id="setup-form">
+        <div class="input-group">
+            <label>Company Name</label>
+            <input type="text" id="company-name" required>
+        </div>
+        <div class="input-group">
+            <label>Email Address</label>
+            <input type="email" id="company-email" required>
+        </div>
+        <div class="input-group">
+            <label>GSTIN (Optional)</label>
+            <input type="text" id="company-gstin">
+        </div>
+        <div class="input-group">
+            <label>Logo URL (Enter image link)</label>
+            <input type="text" id="company-logo" placeholder="http://...">
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+</div>
+
+<script type="module" src="js/setup.js"></script>
+</body>
+</html>

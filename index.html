@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quickbill Pro - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-section">
+        <img src="assets/logo.png" alt="Quickbill Pro Logo">
+    </div>
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Sign in to manage your billing & inventory.</p>
+
+    <button id="google-btn" class="btn btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+        Sign in with Google
+    </button>
+
+    <div class="divider"><span>OR PHONE</span></div>
+
+    <div id="phone-login-step-1">
+        <div class="input-group">
+            <input type="tel" id="phone-number" placeholder="+91 98765 43210">
+        </div>
+        <div id="recaptcha-container"></div>
+        <button id="send-otp-btn" class="btn btn-primary">Send OTP</button>
+    </div>
+
+    <div id="phone-login-step-2" class="hidden">
+        <div class="input-group">
+            <label>Enter Verification Code</label>
+            <input type="text" id="verification-code" placeholder="123456">
+        </div>
+        <button id="verify-otp-btn" class="btn btn-primary">Verify & Login</button>
+    </div>
+</div>
+
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>
