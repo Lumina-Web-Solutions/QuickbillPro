@@ -3,42 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quickbill Pro - Login</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Quickbill Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans antialiased text-gray-800">
 
-<div class="container">
-    <div class="logo-section">
-        <img src="assets/logo.png" alt="Quickbill Pro Logo">
-    </div>
-    <h2>Welcome Back</h2>
-    <p class="subtitle">Sign in to manage your billing & inventory.</p>
+<div id="app" class="min-h-screen p-4 md:p-8">
+    <header class="mb-6 md:mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Quickbill Pro</h1>
+        <p class="text-gray-500 text-sm md:text-base">Cloud Invoice Generator</p>
+    </header>
 
-    <button id="google-btn" class="btn btn-google">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-        Sign in with Google
-    </button>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200">
+            <h2 class="text-lg md:text-xl font-semibold mb-4 border-b pb-2">Invoice Details</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                    <input type="text" v-model="invoice.number" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" v-model="invoice.date" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+            </div>
 
-    <div class="divider"><span>OR PHONE</span></div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                <input type="text" v-model="invoice.clientName" placeholder="e.g. Acme Corp" class="w-full border p-2 rounded mb-3 focus:ring-blue-500" />
+                
+                <label class="block text-sm font-medium text-gray-700 mb-1">Client Address</label>
+                <textarea v-model="invoice.clientAddress" placeholder="Client billing address..." class="w-full border p-2 rounded focus:ring-blue-500" rows="2"></textarea>
+            </div>
 
-    <div id="phone-login-step-1">
-        <div class="input-group">
-            <input type="tel" id="phone-number" placeholder="+91 98765 43210">
+            <h3 class="text-md md:text-lg font-medium mb-3">Line Items</h3>
+            <div v-for="(item, index) in invoice.items" :key="index" class="flex flex-wrap md:flex-nowrap gap-2 mb-3 items-center">
+                <input type="text" v-model="item.description" placeholder="Description" class="flex-grow w-full md:w-auto border p-2 rounded text-sm" />
+                <input type="number" v-model="item.qty" placeholder="Qty" class="w-24 md:w-20 border p-2 rounded text-sm" />
+                <input type="number" v-model="item.price" placeholder="Price" class="w-32 md:w-28 border p-2 rounded text-sm" />
+                <button @click="removeItem(index)" class="text-red-500 hover:text-red-700 px-2 font-bold" title="Remove Item">&times;</button>
+            </div>
+            
+            <button @click="addItem" class="mt-2 text-blue-600 font-medium hover:text-blue-800 transition text-sm">
+                + Add Item
+            </button>
         </div>
-        <div id="recaptcha-container"></div>
-        <button id="send-otp-btn" class="btn btn-primary">Send OTP</button>
-    </div>
 
-    <div id="phone-login-step-2" class="hidden">
-        <div class="input-group">
-            <label>Enter Verification Code</label>
-            <input type="text" id="verification-code" placeholder="123456">
+        <div class="bg-gray-200 p-4 md:p-8 rounded-lg flex justify-center items-start overflow-x-auto">
+            <div class="bg-white w-full min-w-[600px] max-w-lg aspect-[1/1.4] p-8 md:p-10 shadow-xl relative text-sm">
+                
+                <div class="flex justify-between items-start mb-8 md:mb-10 border-b pb-6">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">INVOICE</h2>
+                        <p class="text-gray-500 mt-1">{{ invoice.number }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-gray-800 text-lg">Lumina Web Solutions</p>
+                        <p class="text-gray-500">Alfin Philip</p>
+                        <p class="text-gray-500">hello@luminawebsolutions.com</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mb-8 md:mb-10">
+                    <div>
+                        <p class="text-gray-500 font-medium mb-1">Billed To:</p>
+                        <p class="font-semibold text-gray-800">{{ invoice.clientName || 'Client Name' }}</p>
+                        <p class="text-gray-600 whitespace-pre-line">{{ invoice.clientAddress || 'Client Address' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-gray-500 font-medium mb-1">Date Issued:</p>
+                        <p class="text-gray-800">{{ invoice.date }}</p>
+                    </div>
+                </div>
+
+                <table class="w-full mb-8 text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-gray-300 text-gray-600">
+                            <th class="py-2">Description</th>
+                            <th class="py-2 text-center">Qty</th>
+                            <th class="py-2 text-right">Price</th>
+                            <th class="py-2 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in invoice.items" :key="index" class="border-b border-gray-100">
+                            <td class="py-3 text-gray-800">{{ item.description || '—' }}</td>
+                            <td class="py-3 text-center text-gray-600">{{ item.qty }}</td>
+                            <td class="py-3 text-right text-gray-600">₹{{ item.price.toFixed(2) }}</td>
+                            <td class="py-3 text-right text-gray-800 font-medium">₹{{ (item.qty * item.price).toFixed(2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="absolute bottom-10 right-10 w-48 md:w-64">
+                    <div class="flex justify-between border-t-2 border-gray-800 pt-2">
+                        <span class="font-bold text-lg text-gray-800">Total Due</span>
+                        <span class="font-bold text-lg text-blue-600">₹{{ calculateTotal.toFixed(2) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button id="verify-otp-btn" class="btn btn-primary">Verify & Login</button>
+
     </div>
 </div>
 
-<script type="module" src="js/auth.js"></script>
+<script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+        setup() {
+            const invoice = ref({
+                number: 'INV-0001',
+                date: new Date().toISOString().split('T')[0],
+                clientName: '',
+                clientAddress: '',
+                items: [
+                    { description: 'Web Development Services', qty: 1, price: 5000 }
+                ]
+            });
+
+            const addItem = () => {
+                invoice.value.items.push({ description: '', qty: 1, price: 0 });
+            };
+
+            const removeItem = (index) => {
+                invoice.value.items.splice(index, 1);
+            };
+
+            const calculateTotal = computed(() => {
+                return invoice.value.items.reduce((total, item) => {
+                    return total + ((item.qty || 0) * (item.price || 0));
+                }, 0);
+            });
+
+            return {
+                invoice,
+                addItem,
+                removeItem,
+                calculateTotal
+            }
+        }
+    }).mount('#app')
+</script>
 </body>
 </html>
