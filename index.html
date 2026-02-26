@@ -1,24 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quickbill Pro</title>
+    <title>Quickbill Pro | Lumina Web Solutions</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        @media print {
+            /* Hide the background and everything else */
+            body {
+                background-color: white;
+            }
+            body * {
+                visibility: hidden;
+            }
+            /* Only show the invoice preview */
+            #invoice-preview, #invoice-preview * {
+                visibility: visible;
+            }
+            /* Reposition the invoice to the top left for a clean PDF */
+            #invoice-preview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none !important;
+                min-width: 100%; /* Ensure it spans the page */
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
 <div id="app" class="min-h-screen p-4 md:p-8">
-    <header class="mb-6 md:mb-8">
+    <header class="mb-6 md:mb-8 hide-on-print">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Quickbill Pro</h1>
-        <p class="text-gray-500 text-sm md:text-base">Cloud Invoice Generator</p>
+        <p class="text-gray-500 text-sm md:text-base">Cloud Invoice Generator - Auto-saving enabled</p>
     </header>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
         
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200">
-            <h2 class="text-lg md:text-xl font-semibold mb-4 border-b pb-2">Invoice Details</h2>
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200 hide-on-print">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-lg md:text-xl font-semibold">Invoice Details</h2>
+                <button @click="resetInvoice" class="text-sm text-red-500 hover:text-red-700">Clear All</button>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
@@ -44,16 +77,20 @@
                 <input type="text" v-model="item.description" placeholder="Description" class="flex-grow w-full md:w-auto border p-2 rounded text-sm" />
                 <input type="number" v-model="item.qty" placeholder="Qty" class="w-24 md:w-20 border p-2 rounded text-sm" />
                 <input type="number" v-model="item.price" placeholder="Price" class="w-32 md:w-28 border p-2 rounded text-sm" />
-                <button @click="removeItem(index)" class="text-red-500 hover:text-red-700 px-2 font-bold" title="Remove Item">&times;</button>
+                <button @click="removeItem(index)" class="text-red-500 hover:text-red-700 px-2 font-bold text-xl" title="Remove Item">&times;</button>
             </div>
             
             <button @click="addItem" class="mt-2 text-blue-600 font-medium hover:text-blue-800 transition text-sm">
                 + Add Item
             </button>
+
+            <button @click="printInvoice" class="mt-8 w-full bg-gray-900 text-white font-bold py-3 rounded hover:bg-gray-800 transition shadow-lg">
+                Download PDF / Print
+            </button>
         </div>
 
-        <div class="bg-gray-200 p-4 md:p-8 rounded-lg flex justify-center items-start overflow-x-auto">
-            <div class="bg-white w-full min-w-[600px] max-w-lg aspect-[1/1.4] p-8 md:p-10 shadow-xl relative text-sm">
+        <div class="bg-gray-200 p-4 md:p-8 rounded-lg flex justify-center items-start overflow-x-auto hide-on-print">
+            <div id="invoice-preview" class="bg-white w-full min-w-[600px] max-w-lg aspect-[1/1.4] p-8 md:p-10 shadow-xl relative text-sm">
                 
                 <div class="flex justify-between items-start mb-8 md:mb-10 border-b pb-6">
                     <div>
@@ -92,7 +129,7 @@
                         <tr v-for="(item, index) in invoice.items" :key="index" class="border-b border-gray-100">
                             <td class="py-3 text-gray-800">{{ item.description || '—' }}</td>
                             <td class="py-3 text-center text-gray-600">{{ item.qty }}</td>
-                            <td class="py-3 text-right text-gray-600">₹{{ item.price.toFixed(2) }}</td>
+                            <td class="py-3 text-right text-gray-600">₹{{ Number(item.price).toFixed(2) }}</td>
                             <td class="py-3 text-right text-gray-800 font-medium">₹{{ (item.qty * item.price).toFixed(2) }}</td>
                         </tr>
                     </tbody>
@@ -111,11 +148,12 @@
 </div>
 
 <script>
-    const { createApp, ref, computed } = Vue;
+    const { createApp, ref, computed, watch, onMounted } = Vue;
 
     createApp({
         setup() {
-            const invoice = ref({
+            // Default empty state
+            const defaultInvoice = {
                 number: 'INV-0001',
                 date: new Date().toISOString().split('T')[0],
                 clientName: '',
@@ -123,7 +161,26 @@
                 items: [
                     { description: 'Web Development Services', qty: 1, price: 5000 }
                 ]
+            };
+
+            const invoice = ref({ ...defaultInvoice });
+
+            // Load from LocalStorage on mount
+            onMounted(() => {
+                const savedData = localStorage.getItem('quickbill-data');
+                if (savedData) {
+                    try {
+                        invoice.value = JSON.parse(savedData);
+                    } catch (e) {
+                        console.error("Could not load saved data");
+                    }
+                }
             });
+
+            // Watch for changes and save to LocalStorage automatically
+            watch(invoice, (newValue) => {
+                localStorage.setItem('quickbill-data', JSON.stringify(newValue));
+            }, { deep: true });
 
             const addItem = () => {
                 invoice.value.items.push({ description: '', qty: 1, price: 0 });
@@ -133,17 +190,29 @@
                 invoice.value.items.splice(index, 1);
             };
 
+            const resetInvoice = () => {
+                if(confirm("Are you sure you want to clear all data? This will reset the invoice.")) {
+                    invoice.value = { ...defaultInvoice, items: [{ description: '', qty: 1, price: 0 }] };
+                }
+            };
+
             const calculateTotal = computed(() => {
                 return invoice.value.items.reduce((total, item) => {
                     return total + ((item.qty || 0) * (item.price || 0));
                 }, 0);
             });
 
+            const printInvoice = () => {
+                window.print();
+            };
+
             return {
                 invoice,
                 addItem,
                 removeItem,
-                calculateTotal
+                resetInvoice,
+                calculateTotal,
+                printInvoice
             }
         }
     }).mount('#app')
